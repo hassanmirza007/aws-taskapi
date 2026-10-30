@@ -1,0 +1,39 @@
+# CI: runs on every push and pull request. No AWS needed yet.
+# In step 6 we add a deploy job that only runs after this one passes on main.
+
+name: ci
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  test-and-build:
+    runs-on: ubuntu-latest   # has Docker, so Testcontainers works out of the box
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+          cache: maven
+
+      # surefire: unit + web slice tests, then failsafe: Testcontainers integration tests
+      - name: Unit and integration tests
+        run: mvn -B verify
+
+      - name: Upload test reports
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: test-reports
+          path: |
+            target/surefire-reports/
+            target/failsafe-reports/
+
+      # Only reached if every test passed: the image is never built from broken code
+      - name: Build Docker image
+        run: docker build -t taskapi:${{ github.sha }} .

@@ -1,0 +1,46 @@
+# Runs the whole stack on one machine: your laptop now, and a single EC2 instance in step 2.
+# In step 3 Postgres moves to RDS, in step 5 Redis moves to ElastiCache.
+
+services:
+  postgres:
+    image: postgres:16
+    environment:
+      POSTGRES_DB: taskdb
+      POSTGRES_USER: taskapp
+      POSTGRES_PASSWORD: taskapp
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U taskapp -d taskdb"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+  redis:
+    image: redis:7
+    ports:
+      - "6379:6379"
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+  app:
+    build: .
+    environment:
+      DB_HOST: postgres
+      REDIS_HOST: redis
+      APP_VERSION: compose
+    ports:
+      - "8080:8080"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+
+volumes:
+  pgdata:

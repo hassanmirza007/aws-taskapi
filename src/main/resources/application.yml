@@ -1,0 +1,63 @@
+# Every value that changes between your laptop, EC2 and ECS comes from an
+# environment variable, with a local default after the colon.
+# On AWS you never edit this file - you set env vars (later: from Secrets Manager).
+
+server:
+  port: ${PORT:8080}
+  shutdown: graceful            # finish in-flight requests when ECS stops a task
+
+spring:
+  application:
+    name: taskapi
+  lifecycle:
+    timeout-per-shutdown-phase: 20s
+
+  datasource:
+    url: jdbc:postgresql://${DB_HOST:localhost}:${DB_PORT:5432}/${DB_NAME:taskdb}
+    username: ${DB_USER:taskapp}
+    password: ${DB_PASSWORD:taskapp}
+    hikari:
+      maximum-pool-size: ${DB_POOL_SIZE:5}
+      connection-timeout: 5000  # fail fast so a blocked security group shows up quickly in logs
+
+  jpa:
+    open-in-view: false
+    hibernate:
+      ddl-auto: validate        # Liquibase owns the schema; Hibernate only checks it
+
+  liquibase:
+    change-log: classpath:db/changelog/db.changelog-master.yaml
+
+  data:
+    redis:
+      host: ${REDIS_HOST:localhost}
+      port: ${REDIS_PORT:6379}
+      ssl:
+        enabled: ${REDIS_SSL:false}   # set true for ElastiCache with in-transit encryption
+      timeout: 2s
+
+  cache:
+    type: redis
+    redis:
+      time-to-live: 10m
+
+app:
+  version: ${APP_VERSION:local}
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info
+  endpoint:
+    health:
+      probes:
+        enabled: true           # /actuator/health/liveness and /readiness
+      show-details: always      # fine for learning; turn off for a real public service
+  health:
+    redis:
+      enabled: ${REDIS_HEALTH_ENABLED:true}
+
+logging:
+  level:
+    com.hassan.taskapi: INFO
