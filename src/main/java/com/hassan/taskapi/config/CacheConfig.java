@@ -24,7 +24,7 @@ public class CacheConfig implements CachingConfigurer {
         return new SimpleCacheErrorHandler() {
             @Override
             public void handleCacheGetError(RuntimeException e, Cache cache, Object key) {
-                log.warn("Cache read failed for {}::{} - using database: {}", cache.getName(), key, e.getMessage());
+                log.warn("Cache read failed for specific resource  {}::{} - using database: {}", cache.getName(), key, e.getMessage());
             }
 
             @Override
