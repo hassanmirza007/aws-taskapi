@@ -3,3 +3,10 @@ target/
 *.iml
 .vscode/
 .env
+
+# macOS
+.DS_Store
+
+# Deployment artifacts
+*.tar.gz
+compose.ec2.yml
