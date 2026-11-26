@@ -73,18 +73,17 @@ jobs:
       - name: Deploy image to EC2 through SSM
         run: |
           PARAMETERS=$(jq -n --arg tag "$IMAGE_TAG" '{
-            commands: [
-              "set -e",
-              "aws ecr get-login-password --region ap-southeast-2 | sudo docker login --username AWS --password-stdin 373220261277.dkr.ecr.ap-southeast-2.amazonaws.com",
-              ("sudo env IMAGE_TAG=" + $tag + " docker compose --env-file /etc/taskapi/docker.env -f /home/ec2-user/compose.ec2.yml pull app"),
-              ("sudo env IMAGE_TAG=" + $tag + " docker compose --env-file /etc/taskapi/docker.env -f /home/ec2-user/compose.ec2.yml up -d --no-deps app"),
-              "for i in $(seq 1 24); do if curl -fsS http://localhost:8080/actuator/health >/dev/null; then echo 'Health check passed'; exit 0; fi; sleep 5; done",
-              "echo 'Health check failed'",
-              "sudo docker logs --tail 100 ec2-user-app-1",
-              "exit 1"
-            ]
+          commands: [
+            "set -e",
+            "aws ecr get-login-password --region ap-southeast-2 | sudo docker login --username AWS --password-stdin 373220261277.dkr.ecr.ap-southeast-2.amazonaws.com",
+            ("sudo env IMAGE_TAG=" + $tag + " docker compose --env-file /etc/taskapi/docker.env -f /home/ec2-user/compose.ec2.yml pull app"),
+            ("sudo env IMAGE_TAG=" + $tag + " docker compose --env-file /etc/taskapi/docker.env -f /home/ec2-user/compose.ec2.yml up -d --no-deps app"),
+            "for i in $(seq 1 24); do if curl -fsS http://localhost:8080/actuator/health >/dev/null; then echo HEALTH_CHECK_PASSED; exit 0; fi; sleep 5; done",
+            "echo HEALTH_CHECK_FAILED",
+            "sudo docker logs --tail 100 ec2-user-app-1",
+            "exit 1"
+          ]
           }')
-
           COMMAND_ID=$(aws ssm send-command \
             --document-name "AWS-RunShellScript" \
             --instance-ids "$EC2_INSTANCE_ID" \
