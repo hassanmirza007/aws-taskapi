@@ -79,7 +79,7 @@ jobs:
               ("sudo env IMAGE_TAG=" + $tag + " docker compose --env-file /etc/taskapi/docker.env -f /home/ec2-user/compose.ec2.yml pull app"),
               ("sudo env IMAGE_TAG=" + $tag + " docker compose --env-file /etc/taskapi/docker.env -f /home/ec2-user/compose.ec2.yml up -d --no-deps app"),
               "for i in $(seq 1 24); do if curl -fsS http://localhost:8080/actuator/health >/dev/null; then echo 'Health check passed'; exit 0; fi; sleep 5; done",
-              "echo Health check failed",
+              "echo 'Health check failed'",
               "sudo docker logs --tail 100 ec2-user-app-1",
               "exit 1"
             ]
